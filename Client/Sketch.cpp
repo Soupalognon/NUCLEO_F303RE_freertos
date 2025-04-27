@@ -8,13 +8,12 @@
 
 /*********************************/
 //External variables
-extern TIM_HandleTypeDef htim1;
-extern TIM_HandleTypeDef htim3;
-extern TIM_HandleTypeDef htim4;
+extern TIM_HandleTypeDef htim1;	//Motor PWM
+extern TIM_HandleTypeDef htim3;	//Encoder QEI
+extern TIM_HandleTypeDef htim4;	//Encoder QEI
 
-extern UART_HandleTypeDef huart2;
-
-extern USBD_HandleTypeDef hUsbDeviceFS;
+extern UART_HandleTypeDef huart2;	//UART Debug
+extern USBD_HandleTypeDef hUsbDeviceFS;	//USB Brain computer
 
 extern osEventFlagsId_t debugEventHandle;
 extern osEventFlagsId_t usbEventHandle;
