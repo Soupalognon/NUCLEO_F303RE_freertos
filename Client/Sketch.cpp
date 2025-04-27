@@ -1,10 +1,12 @@
+#include <Serial/UartSerial.h>
+#include <Serial/UsbSerial.h>
 #include "ConfigurationFile.h"
 #include "usbd_cdc_if.h"
 
 #include "ClosedControlLoop/ClosedControlLoop.h"
 #include "MotorControl/MotorControl.h"
-#include "Serial/UsbStream.h"
-#include "Serial/SerialStream.h"
+#include "LEDs/LEDs.h"
+#include "FreertosRealTimeStats/FreertosRealTimeStats.h"
 
 /*********************************/
 //External variables
@@ -21,11 +23,17 @@ extern osTimerId_t EncoderTaskHandle;
 extern osTimerId_t MotorTaskHandle;
 /*********************************/
 
-UsbStream usbStream(hUsbDeviceFS, usbEventHandle);
-SerialStream uartStream(huart2, debugEventHandle);
+/*********************************/
+//General objects
+UsbSerial usbStream(hUsbDeviceFS, usbEventHandle);
+UartSerial uartStream(huart2, debugEventHandle);
 
 ClosedControlLoop closedLoopControl;
 MotorControl motorControl(htim1);
+
+LEDs leds(LED_ENCODER_TASK, LED_MOTOR_TASK, LED_INIT_ERROR, LED_FREERTOS_ERROR, LED_STM32_ERROR,
+	LED_USB_ERROR);
+/*********************************/
 
 uint8_t rxData[1];
 
@@ -38,33 +46,27 @@ void setup() {
 
 	HAL_UART_Receive_IT(&huart2, rxData, 1);
 
-	osTimerStart(EncoderTaskHandle, ENCODER_CALLBACK_PERIOD);
+//	osTimerStart(EncoderTaskHandle, ENCODER_CALLBACK_PERIOD);
 //	osTimerStart(MotorTaskHandle, MOTOR_CONTROL_CALLBACK_PERIOD);
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-	if (huart->Instance == USART2) {
-		uartStream.saveInputMsg(rxData, 1);
-		HAL_UART_Receive_IT(&huart2, rxData, 1);
-	}
-}
-
-void USB_CDC_RxHandler(uint8_t *Buf, uint32_t Len) {
-	usbStream.saveInputMsg(Buf, Len);
-}
-
 void StartBrainComTaskCpp(void *argument) {
+
 	for (;;) {
-//		serialStream.addInfo("Test1");
 		osDelay(1000);
+
+		//		if (print_real_time_stats(pdMS_TO_TICKS(1000)) == STM32_OK) {
+		//			uartStream.addInfo("Real time stats obtained\n");
+		//		} else {
+		//			uartStream.addInfo("Error getting real time stats\n");
+		//		}
 	}
 }
 
 void StartDebugComTaskCpp(void *argument) {
 
 	for (;;) {
-		osEventFlagsWait(debugEventHandle, 0x01,
-		osFlagsWaitAny | osFlagsNoClear, osWaitForever);
+		osEventFlagsWait(debugEventHandle, 0x01, osFlagsWaitAny | osFlagsNoClear, osWaitForever);
 		uartStream.handler();
 	}
 }
@@ -72,8 +74,7 @@ void StartDebugComTaskCpp(void *argument) {
 void StartUsbComTaskCpp(void *argument) {
 
 	for (;;) {
-		osEventFlagsWait(usbEventHandle, 0x01,
-		osFlagsWaitAny | osFlagsNoClear, osWaitForever);
+		osEventFlagsWait(usbEventHandle, 0x01, osFlagsWaitAny | osFlagsNoClear, osWaitForever);
 		usbStream.handler();
 	}
 }
@@ -90,22 +91,42 @@ void EncoderTaskCallbackCpp(void *argument) {
 	int16_t currentQeiValueLeft = (int16_t) TIM3->CNT;
 	int16_t currentQeiValueRight = (int16_t) TIM4->CNT;
 
-	printf("%d, %d\n", (currentQeiValueLeft - previousQeiValueLeft), (currentQeiValueRight - previousQeiValueRight));
+	printf("%d, %d\n", (currentQeiValueLeft - previousQeiValueLeft),
+		(currentQeiValueRight - previousQeiValueRight));
 
 	closedLoopControl.updatePositionAndVelocityDiffDrive(&currentPos, &currentVelocity,
-		(currentQeiValueLeft - previousQeiValueLeft), (currentQeiValueRight - previousQeiValueRight), dt);
+		(currentQeiValueLeft - previousQeiValueLeft),
+		(currentQeiValueRight - previousQeiValueRight), dt);
 
 	previousQeiValueLeft = currentQeiValueLeft;
 	previousQeiValueRight = currentQeiValueRight;
 
 	uint32_t duration = HAL_GetTick() - time;
 	uartStream.addInfoLn(
-		"Encoder - duration=" + std::to_string(duration) + "ms / period=" + std::to_string(elapsed) + "ms");
-//	HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+		"Encoder - duration=" + std::to_string(duration) + "ms / period=" + std::to_string(elapsed)
+			+ "ms");
+
+	leds.encoderTask();
+
+	HAL_Delay(5);
 }
 
 void MotorTaskCallbackCpp(void *argument) {
-//	serialStream.addInfo("Test2\n");
-	osDelay(50);
+	//	serialStream.addInfo("Test2\n");
+	leds.motorTask();
 }
 
+/**********************************************************************/
+//UART and USB RX callback
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+	if (huart->Instance == USART2) {
+		uartStream.saveInputMsg(rxData, 1);
+		HAL_UART_Receive_IT(&huart2, rxData, 1);
+	}
+}
+
+void USB_CDC_RxHandler(uint8_t *Buf, uint32_t Len) {
+	usbStream.saveInputMsg(Buf, Len);
+}
+
+/**********************************************************************/

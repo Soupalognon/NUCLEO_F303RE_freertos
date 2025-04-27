@@ -5,14 +5,14 @@
  *      Author: gdurand
  */
 
-#ifndef SERIAL_STREAM_H_
-#define SERIAL_STREAM_H_
+#ifndef SERIAL_SERIAL_H_
+#define SERIAL_SERIAL_H_
 
 #include "ConfigurationFile.h"
 
-class Stream {
+class Serial {
 public:
-	Stream(osEventFlagsId_t &eventFlag) :
+	Serial(osEventFlagsId_t &eventFlag) :
 		_eventFlag(&eventFlag) {
 		_mutex = osMutexNew(nullptr);
 	}
@@ -89,4 +89,4 @@ private:
 	}
 };
 
-#endif /* SERIAL_STREAM_H_ */
+#endif /* SERIAL_SERIAL_H_ */

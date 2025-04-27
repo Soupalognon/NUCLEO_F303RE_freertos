@@ -5,16 +5,16 @@
  *      Author: gdurand
  */
 
-#ifndef SERIAL_USBSTREAM_H_
-#define SERIAL_USBSTREAM_H_
+#ifndef SERIAL_USBSERIAL_H_
+#define SERIAL_USBSERIAL_H_
+#include <Serial/Serial.h>
 #include "ConfigurationFile.h"
-#include "Stream.h"
 #include "usbd_cdc_if.h"
 
-class UsbStream: public Stream {
+class UsbSerial: public Serial {
 public:
-	UsbStream(USBD_HandleTypeDef& hUsbDeviceFS, osEventFlagsId_t &eventFlag) :
-		Stream(eventFlag), _usb(&hUsbDeviceFS) {
+	UsbSerial(USBD_HandleTypeDef& hUsbDeviceFS, osEventFlagsId_t &eventFlag) :
+		Serial(eventFlag), _usb(&hUsbDeviceFS) {
 	}
 
 protected:
@@ -24,4 +24,4 @@ private:
 	USBD_HandleTypeDef* _usb;
 };
 
-#endif /* SERIAL_USBSTREAM_H_ */
+#endif /* SERIAL_USBSERIAL_H_ */

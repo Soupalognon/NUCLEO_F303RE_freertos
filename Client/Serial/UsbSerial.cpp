@@ -4,10 +4,10 @@
  *  Created on: Apr 25, 2025
  *      Author: gdurand
  */
-#include "UsbStream.h"
+#include <Serial/UsbSerial.h>
 #include "usbd_cdc_if.h"
 
-HAL_StatusTypeDef UsbStream::send(std::string payload) {
+HAL_StatusTypeDef UsbSerial::send(std::string payload) {
 	USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*) _usb->pClassData;
 	if (hcdc->TxState == 0) {
 		_outputBuffer = payload;
@@ -20,6 +20,6 @@ HAL_StatusTypeDef UsbStream::send(std::string payload) {
 	return HAL_BUSY;
 }
 
-void UsbStream::processInputMsg(std::string payload) {
+void UsbSerial::processInputMsg(std::string payload) {
 	addInfo(payload);
 }

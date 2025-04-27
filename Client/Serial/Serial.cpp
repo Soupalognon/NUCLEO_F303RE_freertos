@@ -4,9 +4,9 @@
  *  Created on: Apr 25, 2025
  *      Author: gdurand
  */
-#include "Stream.h"
+#include <Serial/Serial.h>
 
-void Stream::handler() {
+void Serial::handler() {
 	if (queueIn.size() > 0) {
 		processInputMsg(queueIn.front());
 		queueIn.pop_front();
@@ -27,7 +27,7 @@ void Stream::handler() {
 	}
 }
 
-bool Stream::saveInputMsg(uint8_t *data, uint8_t len) {
+bool Serial::saveInputMsg(uint8_t *data, uint8_t len) {
 	if (HAL_GetTick() - _timer > 100) {
 		clearBuffer();
 	}
